@@ -249,28 +249,33 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     </div>
 
                     {/* Quantity & Price */}
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="flex items-center bg-[#1F1A17] border border-[#3A312B] rounded-lg p-0.5">
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center bg-[#15110F] border border-[#3A312B] rounded-xl p-1 shadow-inner">
                         <button
                           onClick={() => onUpdateQuantity(item.cartId, -1)}
-                          className="p-1 text-stone-400 hover:text-white"
+                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-[#2D2521] hover:bg-[#3A312B] active:bg-[#E65F2B] text-stone-300 hover:text-white font-bold rounded-lg transition-all border border-[#3A312B] active:scale-90"
+                          aria-label="Decrease item quantity"
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-4 h-4" />
                         </button>
-                        <span className="w-6 text-center text-xs font-bold text-white font-mono">
+                        <span className="w-8 text-center text-sm font-extrabold text-white font-mono">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => onUpdateQuantity(item.cartId, 1)}
-                          className="p-1 text-stone-400 hover:text-white"
+                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-[#E65F2B] hover:bg-[#D14F1D] active:bg-[#B83E12] text-white font-bold rounded-lg transition-all shadow-md shadow-[#E65F2B]/20 active:scale-90"
+                          aria-label="Increase item quantity"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-4 h-4" />
                         </button>
                       </div>
 
-                      <span className="text-xs font-bold text-[#E65F2B] font-mono">
-                        ${item.itemTotalPrice.toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <span className="text-xs text-stone-400 block font-light">Subtotal</span>
+                        <span className="text-sm font-black text-[#E65F2B] font-mono">
+                          ${item.itemTotalPrice.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

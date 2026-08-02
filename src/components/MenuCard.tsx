@@ -72,31 +72,32 @@ export const MenuCard: React.FC<MenuCardProps> = ({
             </span>
           </div>
 
-          {/* Action Button */}
-          <div className="flex items-center gap-2">
-            {item.customizable ? (
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1.5">
+            {item.customizable && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectItem(item);
                 }}
-                className="flex items-center gap-1 bg-[#3A312B] hover:bg-[#D4A373] text-[#D4A373] hover:text-[#1F1A17] font-semibold text-xs px-3 py-2 rounded-xl border border-[#D4A373]/30 transition-all"
+                className="flex items-center gap-1 bg-[#3A312B] hover:bg-[#D4A373] text-[#D4A373] hover:text-[#1F1A17] font-semibold text-xs px-2.5 py-2 rounded-xl border border-[#D4A373]/30 transition-all"
+                title="Customize milk, size & toppings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Customize</span>
-              </button>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickAdd(item);
-                }}
-                className="flex items-center gap-1 bg-[#E65F2B] hover:bg-[#D14F1D] text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-md shadow-[#E65F2B]/20 transition-all transform active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add</span>
+                <span className="hidden xs:inline">Customize</span>
               </button>
             )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickAdd(item);
+              }}
+              className="flex items-center gap-1 bg-[#E65F2B] hover:bg-[#D14F1D] text-white font-bold text-xs px-3 py-2 rounded-xl shadow-md shadow-[#E65F2B]/20 transition-all transform active:scale-95 whitespace-nowrap"
+              title="Add standard brew directly to bag"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add to Bag</span>
+            </button>
           </div>
         </div>
       </div>

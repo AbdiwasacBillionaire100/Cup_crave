@@ -293,12 +293,12 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
             </button>
           </div>
 
-          {/* Add to Order Button */}
+          {/* Add to Bag Button */}
           <button
             onClick={handleAdd}
             className="flex-1 flex items-center justify-between bg-[#E65F2B] hover:bg-[#D14F1D] text-white font-bold text-sm px-5 py-3.5 rounded-2xl shadow-xl shadow-[#E65F2B]/30 transition-all transform active:scale-95"
           >
-            <span>Add to Order</span>
+            <span>Add to Bag</span>
             <span className="font-mono text-base">${totalPrice.toFixed(2)}</span>
           </button>
         </div>

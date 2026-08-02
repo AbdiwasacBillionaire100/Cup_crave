@@ -7,6 +7,7 @@ import { SearchBar } from './components/SearchBar';
 import { MenuGrid } from './components/MenuGrid';
 import { CustomizationModal } from './components/CustomizationModal';
 import { CartDrawer } from './components/CartDrawer';
+import { FloatingCartBadge } from './components/FloatingCartBadge';
 import { OrderTrackerModal } from './components/OrderTrackerModal';
 import { AiBaristaModal } from './components/AiBaristaModal';
 import { Footer } from './components/Footer';
@@ -290,6 +291,13 @@ export default function App() {
       <OrderTrackerModal
         order={activeOrder}
         onClose={() => setIsOrderTrackerOpen(false)}
+      />
+
+      {/* Floating Shopping Cart Badge */}
+      <FloatingCartBadge
+        cartItemCount={cartItems.reduce((sum, ci) => sum + ci.quantity, 0)}
+        subtotal={cartItems.reduce((sum, ci) => sum + ci.itemTotalPrice, 0)}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       <AiBaristaModal
