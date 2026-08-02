@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MenuItem, CartItem } from '../types';
-import { X, Plus, Minus, Check, Sparkles, Coffee } from 'lucide-react';
+import { X, Plus, Minus, Check, Sparkles, Coffee, Flame } from 'lucide-react';
 
 interface CustomizationModalProps {
   item: MenuItem | null;
@@ -29,6 +29,9 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   );
   const [selectedSweetness, setSelectedSweetness] = useState(
     item.sweetnessLevels && item.sweetnessLevels.length > 0 ? item.sweetnessLevels[0] : undefined
+  );
+  const [selectedSpice, setSelectedSpice] = useState(
+    item.spiceLevels && item.spiceLevels.length > 0 ? item.spiceLevels[0] : undefined
   );
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -63,6 +66,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
       selectedMilk,
       selectedSweetness,
       selectedTemp: item.temperatureOptions ? selectedTemp : undefined,
+      selectedSpice,
       selectedExtras,
       itemTotalPrice: totalPrice,
       specialInstructions: specialInstructions.trim() || undefined,
@@ -210,6 +214,35 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                       }`}
                     >
                       {sweet}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Spice Level Choice */}
+          {item.spiceLevels && item.spiceLevels.length > 0 && (
+            <div className="space-y-2">
+              <label className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>Spice & Heat Preference</span>
+              </label>
+              <div className="flex flex-col gap-2">
+                {item.spiceLevels.map((spice) => {
+                  const isSelected = selectedSpice === spice;
+                  return (
+                    <button
+                      key={spice}
+                      onClick={() => setSelectedSpice(spice)}
+                      className={`p-2.5 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${
+                        isSelected
+                          ? 'bg-[#E65F2B]/20 border-[#E65F2B] text-white shadow-sm'
+                          : 'bg-[#2D2521] border-[#3A312B] text-stone-300 hover:text-white'
+                      }`}
+                    >
+                      <span>{spice}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#E65F2B]" />}
                     </button>
                   );
                 })}

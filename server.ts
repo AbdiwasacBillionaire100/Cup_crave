@@ -3,7 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import { MENU_ITEMS, CATEGORIES } from './src/data/menuData';
-import { Order, OrderStatus, User, UserActivityLog } from './src/types';
+import { Order, OrderStatus, User, UserActivityLog, MenuItem, InventoryItem, SalesAnalytics } from './src/types';
 import { GoogleGenAI } from '@google/genai';
 
 const app = express();
@@ -13,6 +13,127 @@ app.use(express.json());
 
 // In-memory databases
 const ordersStore = new Map<string, Order>();
+
+// Dynamic Menu Items Store (Full CRUD)
+let menuItemsStore: MenuItem[] = MENU_ITEMS.map((item) => ({
+  ...item,
+  available: item.available ?? true,
+}));
+
+// Inventory Tracker Database
+let inventoryStore: InventoryItem[] = [
+  { id: 'inv-1', name: 'Espresso Roast Beans', category: 'Coffee', quantity: 18.5, unit: 'kg', minThreshold: 5.0, lastRestocked: new Date().toISOString() },
+  { id: 'inv-2', name: 'Organic Oat Milk', category: 'Dairy & Plant', quantity: 3.8, unit: 'Liters', minThreshold: 10.0, lastRestocked: new Date(Date.now() - 86400000).toISOString() },
+  { id: 'inv-3', name: 'Ceremonial Grade Matcha', category: 'Tea & Powders', quantity: 1.2, unit: 'kg', minThreshold: 2.0, lastRestocked: new Date(Date.now() - 172800000).toISOString() },
+  { id: 'inv-4', name: 'Artisan Croissant Butter', category: 'Bakery', quantity: 15.0, unit: 'kg', minThreshold: 5.0, lastRestocked: new Date().toISOString() },
+  { id: 'inv-5', name: 'Raw Wildflower Honey', category: 'Syrups', quantity: 12, unit: 'Bottles', minThreshold: 4.0, lastRestocked: new Date().toISOString() },
+  { id: 'inv-6', name: 'Organic Vanilla Syrup', category: 'Syrups', quantity: 2.5, unit: 'Bottles', minThreshold: 5.0, lastRestocked: new Date(Date.now() - 432000000).toISOString() },
+  { id: 'inv-7', name: 'Whole Dairy Milk', category: 'Dairy & Plant', quantity: 24.0, unit: 'Liters', minThreshold: 8.0, lastRestocked: new Date().toISOString() },
+  { id: 'inv-8', name: 'Sourdough Flour', category: 'Bakery', quantity: 45.0, unit: 'kg', minThreshold: 12.0, lastRestocked: new Date().toISOString() },
+];
+
+// Seed Sample Historical Orders for Sales Analytics
+(function seedOrders() {
+  const now = Date.now();
+  const sampleOrders: Order[] = [
+    {
+      id: 'CC-842109',
+      createdAt: new Date(now - 1 * 3600000).toISOString(),
+      orderType: 'delivery',
+      items: [
+        {
+          cartId: 'c1',
+          menuItem: menuItemsStore[0], // Crave Signature Honey Latte
+          quantity: 2,
+          selectedSize: 'Medium',
+          selectedMilk: 'Oat Milk',
+          selectedExtras: ['Whipped Cream'],
+          itemTotalPrice: 13.90,
+        },
+        {
+          cartId: 'c2',
+          menuItem: menuItemsStore[3], // French Butter Croissant
+          quantity: 2,
+          selectedSize: 'Standard',
+          selectedExtras: [],
+          itemTotalPrice: 9.90,
+        },
+      ],
+      subtotal: 23.80,
+      tax: 2.02,
+      deliveryFee: 2.99,
+      tip: 4.00,
+      discount: 0,
+      total: 32.81,
+      status: 'delivered',
+      customerInfo: { name: 'Sarah Connor', phone: '(555) 234-5678', address: '742 Market St' },
+      estimatedTimeMinutes: 25,
+      baristaName: 'Marco (Master Barista)',
+    },
+    {
+      id: 'CC-912044',
+      createdAt: new Date(now - 3 * 3600000).toISOString(),
+      orderType: 'pickup',
+      items: [
+        {
+          cartId: 'c3',
+          menuItem: menuItemsStore[1], // Nitro Velvet Cold Brew
+          quantity: 3,
+          selectedSize: 'Large',
+          selectedExtras: ['Vanilla Syrup'],
+          itemTotalPrice: 20.25,
+        },
+        {
+          cartId: 'c4',
+          menuItem: menuItemsStore[4], // Avocado Egg Brioche
+          quantity: 1,
+          selectedSize: 'Standard',
+          selectedExtras: [],
+          itemTotalPrice: 11.50,
+        },
+      ],
+      subtotal: 31.75,
+      tax: 2.70,
+      deliveryFee: 0,
+      tip: 3.00,
+      discount: 3.18,
+      promoCode: 'CRAVE10',
+      total: 34.27,
+      status: 'delivered',
+      customerInfo: { name: 'David Miller', phone: '(555) 890-1234' },
+      estimatedTimeMinutes: 12,
+      baristaName: 'Elena (Latte Specialist)',
+    },
+    {
+      id: 'CC-731298',
+      createdAt: new Date(now - 5 * 3600000).toISOString(),
+      orderType: 'delivery',
+      items: [
+        {
+          cartId: 'c5',
+          menuItem: menuItemsStore[2], // Ceremonial Matcha Latte
+          quantity: 2,
+          selectedSize: 'Medium',
+          selectedMilk: 'Almond Milk',
+          selectedExtras: [],
+          itemTotalPrice: 13.50,
+        },
+      ],
+      subtotal: 13.50,
+      tax: 1.15,
+      deliveryFee: 2.99,
+      tip: 2.50,
+      discount: 0,
+      total: 20.14,
+      status: 'delivered',
+      customerInfo: { name: 'Jessica Alba', phone: '(555) 441-2910', address: '100 Bush St' },
+      estimatedTimeMinutes: 20,
+      baristaName: 'Devon (Cold Brew Artisan)',
+    },
+  ];
+
+  sampleOrders.forEach((o) => ordersStore.set(o.id, o));
+})();
 
 // User Authentication Database & Security
 interface UserRecord extends User {
@@ -294,10 +415,14 @@ app.get('/api/categories', (_req: Request, res: Response) => {
   res.json({ success: true, data: CATEGORIES });
 });
 
-// Menu Items API (with search & filter)
+// Public Menu Items API (only returns available items unless includeUnavailable query is set)
 app.get('/api/menu', (req: Request, res: Response) => {
-  const { category, search } = req.query;
-  let items = [...MENU_ITEMS];
+  const { category, search, includeUnavailable } = req.query;
+  let items = [...menuItemsStore];
+
+  if (!includeUnavailable || includeUnavailable === 'false') {
+    items = items.filter(item => item.available !== false);
+  }
 
   if (category && category !== 'all') {
     items = items.filter(item => item.category === category);
@@ -316,11 +441,185 @@ app.get('/api/menu', (req: Request, res: Response) => {
 
 // Single Menu Item Detail API
 app.get('/api/menu/:id', (req: Request, res: Response) => {
-  const item = MENU_ITEMS.find(m => m.id === req.params.id);
+  const item = menuItemsStore.find(m => m.id === req.params.id);
   if (!item) {
     return res.status(404).json({ success: false, error: 'Menu item not found' });
   }
   res.json({ success: true, data: item });
+});
+
+// ADMIN API: MENU MANAGER CRUD
+app.get('/api/admin/menu', (_req: Request, res: Response) => {
+  res.json({ success: true, data: menuItemsStore });
+});
+
+app.post('/api/admin/menu', (req: Request, res: Response) => {
+  try {
+    const { name, category, price, description, image, calories } = req.body;
+    if (!name || !category || price === undefined) {
+      return res.status(400).json({ success: false, error: 'Name, category, and price are required' });
+    }
+
+    const newItem: MenuItem = {
+      id: 'menu-' + Math.floor(1000 + Math.random() * 9000),
+      name: name.trim(),
+      category: category,
+      price: Number(price),
+      description: description ? description.trim() : 'Artisan fresh item',
+      image: image ? image.trim() : 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=800',
+      calories: calories ? Number(calories) : 220,
+      rating: 5.0,
+      reviewCount: 1,
+      customizable: true,
+      available: true,
+      isNew: true,
+    };
+
+    menuItemsStore.unshift(newItem);
+    res.status(201).json({ success: true, data: newItem, message: 'Menu item created successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to create menu item' });
+  }
+});
+
+app.put('/api/admin/menu/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const index = menuItemsStore.findIndex(m => m.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Menu item not found' });
+    }
+
+    const { name, category, price, description, image, calories, available } = req.body;
+    menuItemsStore[index] = {
+      ...menuItemsStore[index],
+      name: name !== undefined ? name.trim() : menuItemsStore[index].name,
+      category: category !== undefined ? category : menuItemsStore[index].category,
+      price: price !== undefined ? Number(price) : menuItemsStore[index].price,
+      description: description !== undefined ? description.trim() : menuItemsStore[index].description,
+      image: image !== undefined ? image.trim() : menuItemsStore[index].image,
+      calories: calories !== undefined ? Number(calories) : menuItemsStore[index].calories,
+      available: available !== undefined ? Boolean(available) : menuItemsStore[index].available,
+    };
+
+    res.json({ success: true, data: menuItemsStore[index], message: 'Menu item updated successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to update menu item' });
+  }
+});
+
+app.patch('/api/admin/menu/:id/toggle', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const item = menuItemsStore.find(m => m.id === id);
+  if (!item) {
+    return res.status(404).json({ success: false, error: 'Menu item not found' });
+  }
+  item.available = item.available === false ? true : false;
+  res.json({ success: true, data: item, message: `Item is now ${item.available ? 'Available' : 'Unavailable'}` });
+});
+
+app.delete('/api/admin/menu/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const index = menuItemsStore.findIndex(m => m.id === id);
+  if (index === -1) {
+    return res.status(404).json({ success: false, error: 'Menu item not found' });
+  }
+  const deleted = menuItemsStore.splice(index, 1)[0];
+  res.json({ success: true, data: deleted, message: 'Menu item deleted successfully' });
+});
+
+// ADMIN API: INVENTORY TRACKER
+app.get('/api/admin/inventory', (_req: Request, res: Response) => {
+  res.json({ success: true, data: inventoryStore });
+});
+
+app.patch('/api/admin/inventory/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { quantity, delta } = req.body;
+  const item = inventoryStore.find(i => i.id === id);
+  if (!item) {
+    return res.status(404).json({ success: false, error: 'Ingredient not found' });
+  }
+
+  if (quantity !== undefined) {
+    item.quantity = Number(quantity);
+  } else if (delta !== undefined) {
+    item.quantity = Math.max(0, item.quantity + Number(delta));
+  }
+  item.lastRestocked = new Date().toISOString();
+
+  res.json({ success: true, data: item, message: 'Stock level updated' });
+});
+
+app.post('/api/admin/inventory', (req: Request, res: Response) => {
+  try {
+    const { name, category, quantity, unit, minThreshold } = req.body;
+    if (!name || !quantity || !unit) {
+      return res.status(400).json({ success: false, error: 'Ingredient name, quantity, and unit are required' });
+    }
+
+    const newItem: InventoryItem = {
+      id: 'inv-' + Math.floor(100 + Math.random() * 900),
+      name: name.trim(),
+      category: category ? category.trim() : 'General Supplies',
+      quantity: Number(quantity),
+      unit: unit.trim(),
+      minThreshold: Number(minThreshold) || 5,
+      lastRestocked: new Date().toISOString(),
+    };
+
+    inventoryStore.push(newItem);
+    res.status(201).json({ success: true, data: newItem, message: 'Ingredient added to inventory' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to add inventory item' });
+  }
+});
+
+// ADMIN API: SALES ANALYTICS SUMMARY
+app.get('/api/admin/analytics', (_req: Request, res: Response) => {
+  const orders = Array.from(ordersStore.values());
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const deliveryOrdersCount = orders.filter(o => o.orderType === 'delivery').length;
+  const pickupOrdersCount = orders.filter(o => o.orderType === 'pickup').length;
+  const tableOrdersCount = orders.filter(o => o.orderType === 'table').length;
+
+  // Calculate Top Selling Items
+  const itemMap = new Map<string, { id: string; name: string; category: string; quantitySold: number; revenue: number }>();
+
+  orders.forEach(order => {
+    order.items.forEach(ci => {
+      const existing = itemMap.get(ci.menuItem.id);
+      if (existing) {
+        existing.quantitySold += ci.quantity;
+        existing.revenue += ci.itemTotalPrice;
+      } else {
+        itemMap.set(ci.menuItem.id, {
+          id: ci.menuItem.id,
+          name: ci.menuItem.name,
+          category: ci.menuItem.category,
+          quantitySold: ci.quantity,
+          revenue: ci.itemTotalPrice,
+        });
+      }
+    });
+  });
+
+  const topSellingItems = Array.from(itemMap.values()).sort((a, b) => b.quantitySold - a.quantitySold);
+
+  const analytics: SalesAnalytics = {
+    totalRevenue,
+    totalOrders,
+    averageOrderValue,
+    deliveryOrdersCount,
+    pickupOrdersCount,
+    tableOrdersCount,
+    topSellingItems,
+    recentOrders: orders.slice().reverse(),
+  };
+
+  res.json({ success: true, data: analytics });
 });
 
 // Create Order API
@@ -340,6 +639,10 @@ app.post('/api/orders', (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Delivery address is required for delivery orders' });
     }
 
+    if (orderType === 'table' && !customerInfo.tableNumber) {
+      return res.status(400).json({ success: false, error: 'Table number is required for Table Service orders' });
+    }
+
     const orderId = 'CC-' + Math.floor(100000 + Math.random() * 900000);
     const barista = BARISTAS[Math.floor(Math.random() * BARISTAS.length)];
     const driver = orderType === 'delivery' ? DRIVERS[Math.floor(Math.random() * DRIVERS.length)] : undefined;
@@ -347,7 +650,7 @@ app.post('/api/orders', (req: Request, res: Response) => {
     const newOrder: Order = {
       id: orderId,
       createdAt: new Date().toISOString(),
-      orderType: orderType === 'pickup' ? 'pickup' : 'delivery',
+      orderType: orderType === 'table' ? 'table' : orderType === 'pickup' ? 'pickup' : 'delivery',
       items,
       subtotal: Number(subtotal) || 0,
       tax: Number(tax) || 0,
@@ -358,7 +661,7 @@ app.post('/api/orders', (req: Request, res: Response) => {
       total: Number(total) || 0,
       status: 'received',
       customerInfo,
-      estimatedTimeMinutes: orderType === 'delivery' ? 25 : 12,
+      estimatedTimeMinutes: orderType === 'delivery' ? 25 : orderType === 'table' ? 8 : 12,
       baristaName: barista,
       driverName: driver,
       driverPhone: orderType === 'delivery' ? '+1 (555) 019-2834' : undefined,

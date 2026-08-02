@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CartItem, CustomerInfo, Order, User } from '../types';
+import { CartItem, CustomerInfo, Order, OrderType, User } from '../types';
 import {
   ShoppingBag,
   Trash2,
@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   AlertCircle,
   Sparkles,
+  Utensils,
 } from 'lucide-react';
 
 interface DesktopCartSidebarProps {
@@ -19,8 +20,8 @@ interface DesktopCartSidebarProps {
   onUpdateQuantity: (cartId: string, delta: number) => void;
   onRemoveItem: (cartId: string) => void;
   onClearCart: () => void;
-  orderType: 'delivery' | 'pickup';
-  onToggleOrderType: (type: 'delivery' | 'pickup') => void;
+  orderType: OrderType;
+  onToggleOrderType: (type: OrderType) => void;
   onOrderSuccess: (order: Order) => void;
   currentUser?: User | null;
 }
@@ -41,6 +42,7 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
   const [customerAddress, setCustomerAddress] = useState('');
   const [aptUnit, setAptUnit] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [tableNumber, setTableNumber] = useState('');
   const [pickupTime, setPickupTime] = useState('ASAP (~10-15 mins)');
 
   // Auto-fill when user signs in
@@ -107,6 +109,11 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
       return;
     }
 
+    if (orderType === 'table' && !tableNumber.trim()) {
+      setSubmitError('Please enter your Table Number');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const fullAddress =
@@ -118,6 +125,7 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
       name: customerName.trim(),
       phone: customerPhone.trim(),
       address: fullAddress,
+      tableNumber: orderType === 'table' ? tableNumber.trim() : undefined,
       deliveryNotes: deliveryNotes.trim() || undefined,
       pickupTime: orderType === 'pickup' ? pickupTime : undefined,
     };
@@ -185,31 +193,43 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Order Mode Toggle Switch */}
-        <div className="bg-[#15110F] p-1.5 rounded-2xl border border-[#3A312B] flex gap-1.5 shadow-inner">
+        {/* 3-Way Order Mode Toggle Switch: Delivery | Table Service | Takeaway */}
+        <div className="bg-[#15110F] p-1.5 rounded-2xl border border-[#3A312B] grid grid-cols-3 gap-1 shadow-inner">
           <button
             type="button"
             onClick={() => onToggleOrderType('delivery')}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
+            className={`py-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all ${
               orderType === 'delivery'
                 ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
                 : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
             }`}
           >
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-3.5 h-3.5" />
             <span>Delivery</span>
           </button>
           <button
             type="button"
+            onClick={() => onToggleOrderType('table')}
+            className={`py-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all ${
+              orderType === 'table'
+                ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
+                : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
+            }`}
+          >
+            <Utensils className="w-3.5 h-3.5 text-amber-400" />
+            <span>Table Service</span>
+          </button>
+          <button
+            type="button"
             onClick={() => onToggleOrderType('pickup')}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
+            className={`py-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all ${
               orderType === 'pickup'
                 ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
                 : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
             }`}
           >
-            <Clock className="w-4 h-4" />
-            <span>Self Pickup</span>
+            <Clock className="w-3.5 h-3.5" />
+            <span>Takeaway</span>
           </button>
         </div>
 
@@ -314,10 +334,18 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
           <form onSubmit={handleCheckout} className="space-y-4 pt-3 border-t border-[#3A312B]">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#D4A373] uppercase tracking-wider block">
-                {orderType === 'delivery' ? 'Delivery Details' : 'Pickup Details'}
+                {orderType === 'delivery'
+                  ? 'Delivery Details'
+                  : orderType === 'table'
+                  ? 'Table Service Details'
+                  : 'Takeaway Details'}
               </span>
               <span className="text-[10px] text-stone-400">
-                {orderType === 'delivery' ? 'Est. ~25 mins' : 'Ready at 742 Market St'}
+                {orderType === 'delivery'
+                  ? 'Est. ~25 mins'
+                  : orderType === 'table'
+                  ? 'Brought directly to table'
+                  : 'Ready at 742 Market St'}
               </span>
             </div>
 
@@ -381,6 +409,33 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
                         className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2 rounded-xl outline-none"
                       />
                     </div>
+                  </div>
+                </>
+              ) : orderType === 'table' ? (
+                <>
+                  <div>
+                    <label className="text-amber-400 block mb-1 font-extrabold flex items-center gap-1.5">
+                      <Utensils className="w-3.5 h-3.5" />
+                      Table Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                      placeholder="e.g. Table 4 or Patio 12"
+                      className="w-full bg-[#2D2521] border border-amber-500/50 focus:border-[#E65F2B] text-white p-2 rounded-xl outline-none font-bold placeholder:font-normal"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-stone-300 block mb-1">Table Notes for Server</label>
+                    <input
+                      type="text"
+                      value={deliveryNotes}
+                      onChange={(e) => setDeliveryNotes(e.target.value)}
+                      placeholder="e.g. High chair needed, extra napkins"
+                      className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2 rounded-xl outline-none"
+                    />
                   </div>
                 </>
               ) : (

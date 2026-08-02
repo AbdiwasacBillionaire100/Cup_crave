@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { CartItem, CustomerInfo, Order } from '../types';
-import { X, Trash2, Plus, Minus, ShoppingBag, MapPin, Clock, Tag, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { CartItem, CustomerInfo, Order, OrderType } from '../types';
+import { X, Trash2, Plus, Minus, ShoppingBag, MapPin, Clock, Tag, ArrowRight, ShieldCheck, AlertCircle, Utensils } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -9,8 +9,8 @@ interface CartDrawerProps {
   onUpdateQuantity: (cartId: string, delta: number) => void;
   onRemoveItem: (cartId: string) => void;
   onClearCart: () => void;
-  orderType: 'delivery' | 'pickup';
-  onToggleOrderType: (type: 'delivery' | 'pickup') => void;
+  orderType: OrderType;
+  onToggleOrderType: (type: OrderType) => void;
   onOrderSuccess: (order: Order) => void;
 }
 
@@ -33,6 +33,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [customerAddress, setCustomerAddress] = useState('');
   const [aptUnit, setAptUnit] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [tableNumber, setTableNumber] = useState('');
   const [pickupTime, setPickupTime] = useState('ASAP (~10-15 mins)');
 
   // Promo Code State
@@ -91,6 +92,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       return;
     }
 
+    if (orderType === 'table' && !tableNumber.trim()) {
+      setSubmitError('Please enter your Table Number');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const fullAddress = orderType === 'delivery' 
@@ -101,6 +107,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       name: customerName.trim(),
       phone: customerPhone.trim(),
       address: fullAddress,
+      tableNumber: orderType === 'table' ? tableNumber.trim() : undefined,
       deliveryNotes: deliveryNotes.trim() || undefined,
       pickupTime: orderType === 'pickup' ? pickupTime : undefined,
     };
@@ -166,31 +173,43 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Order Mode Toggle Switch */}
-          <div className="bg-[#15110F] p-1.5 rounded-2xl border border-[#3A312B] flex gap-1.5 shadow-inner">
+          {/* 3-Way Order Mode Toggle Switch: Delivery | Table Service | Takeaway */}
+          <div className="bg-[#15110F] p-1.5 rounded-2xl border border-[#3A312B] grid grid-cols-3 gap-1 shadow-inner">
             <button
               type="button"
               onClick={() => onToggleOrderType('delivery')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
+              className={`py-2 rounded-xl text-[11px] font-extrabold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all ${
                 orderType === 'delivery'
                   ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
                   : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
               }`}
             >
-              <MapPin className="w-4 h-4" />
+              <MapPin className="w-3.5 h-3.5" />
               <span>Delivery</span>
             </button>
             <button
               type="button"
+              onClick={() => onToggleOrderType('table')}
+              className={`py-2 rounded-xl text-[11px] font-extrabold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all ${
+                orderType === 'table'
+                  ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
+                  : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
+              }`}
+            >
+              <Utensils className="w-3.5 h-3.5 text-amber-400" />
+              <span>Table Service</span>
+            </button>
+            <button
+              type="button"
               onClick={() => onToggleOrderType('pickup')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
+              className={`py-2 rounded-xl text-[11px] font-extrabold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all ${
                 orderType === 'pickup'
                   ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
                   : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
               }`}
             >
-              <Clock className="w-4 h-4" />
-              <span>Self Pickup</span>
+              <Clock className="w-3.5 h-3.5" />
+              <span>Takeaway</span>
             </button>
           </div>
 
@@ -252,6 +271,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       {item.selectedSweetness && (
                         <p>Sweetness: <span className="text-stone-200">{item.selectedSweetness}</span></p>
                       )}
+                      {item.selectedSpice && (
+                        <p>Spice: <span className="text-amber-400 font-medium">{item.selectedSpice}</span></p>
+                      )}
                       {item.selectedExtras.length > 0 && (
                         <p className="text-[#D4A373]">+ {item.selectedExtras.join(', ')}</p>
                       )}
@@ -262,7 +284,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div className="flex items-center bg-[#15110F] border border-[#3A312B] rounded-xl p-1 shadow-inner">
                         <button
                           onClick={() => onUpdateQuantity(item.cartId, -1)}
-                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-[#2D2521] hover:bg-[#3A312B] active:bg-[#E65F2B] text-stone-300 hover:text-white font-bold rounded-lg transition-all border border-[#3A312B] active:scale-90"
+                          className="w-8 h-8 flex items-center justify-center bg-[#2D2521] hover:bg-[#3A312B] active:bg-[#E65F2B] text-stone-300 hover:text-white font-bold rounded-lg transition-all border border-[#3A312B] active:scale-90"
                           aria-label="Decrease item quantity"
                         >
                           <Minus className="w-4 h-4" />
@@ -272,7 +294,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         </span>
                         <button
                           onClick={() => onUpdateQuantity(item.cartId, 1)}
-                          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-[#E65F2B] hover:bg-[#D14F1D] active:bg-[#B83E12] text-white font-bold rounded-lg transition-all shadow-md shadow-[#E65F2B]/20 active:scale-90"
+                          className="w-8 h-8 flex items-center justify-center bg-[#E65F2B] hover:bg-[#D14F1D] active:bg-[#B83E12] text-white font-bold rounded-lg transition-all shadow-md shadow-[#E65F2B]/20 active:scale-90"
                           aria-label="Increase item quantity"
                         >
                           <Plus className="w-4 h-4" />
@@ -292,15 +314,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
           )}
 
-          {/* Delivery & Customer Info Form */}
+          {/* Customer Details Form */}
           {cartItems.length > 0 && (
             <div className="space-y-4 pt-2 border-t border-[#3A312B]">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#D4A373] uppercase tracking-wider block">
-                  {orderType === 'delivery' ? 'Delivery Details & Address' : 'Self Pickup Details'}
+                  {orderType === 'delivery'
+                    ? 'Delivery Address & Contact'
+                    : orderType === 'table'
+                    ? 'Table Service Details'
+                    : 'Takeaway / Pickup Details'}
                 </span>
                 <span className="text-[11px] text-stone-400">
-                  {orderType === 'delivery' ? 'Est. ~25 mins delivery' : 'Ready at 742 Market St'}
+                  {orderType === 'delivery'
+                    ? 'Est. ~25 mins delivery'
+                    : orderType === 'table'
+                    ? 'Brought directly to table'
+                    : 'Ready at 742 Market St'}
                 </span>
               </div>
 
@@ -331,6 +361,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </div>
                 </div>
 
+                {/* Conditional Fields: Delivery vs Table Service vs Takeaway */}
                 {orderType === 'delivery' ? (
                   <>
                     <div>
@@ -366,6 +397,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
                         />
                       </div>
+                    </div>
+                  </>
+                ) : orderType === 'table' ? (
+                  <>
+                    <div>
+                      <label className="text-amber-400 block mb-1 font-extrabold flex items-center gap-1.5">
+                        <Utensils className="w-3.5 h-3.5" />
+                        Table Number *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                        placeholder="e.g. Table 4 or Patio 12"
+                        className="w-full bg-[#2D2521] border border-amber-500/50 focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none font-bold placeholder:font-normal"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-stone-300 block mb-1 font-medium">Table Notes for Server</label>
+                      <input
+                        type="text"
+                        value={deliveryNotes}
+                        onChange={(e) => setDeliveryNotes(e.target.value)}
+                        placeholder="e.g. High chair needed, cutlery, extra napkins"
+                        className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none"
+                      />
                     </div>
                   </>
                 ) : (

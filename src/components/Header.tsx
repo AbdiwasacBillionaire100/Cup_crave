@@ -15,6 +15,7 @@ interface HeaderProps {
   currentUser: User | null;
   onOpenAuth: () => void;
   onOpenUsersDirectory: () => void;
+  onOpenAdminDashboard: () => void;
   onLogout: () => void;
 }
 
@@ -31,6 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenAuth,
   onOpenUsersDirectory,
+  onOpenAdminDashboard,
   onLogout,
 }) => {
   return (
@@ -79,8 +81,18 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Action Buttons: Auth Profile, Users Directory, AI Barista, Search & Cart */}
+        {/* Action Buttons: Admin Dashboard, Auth Profile, Users Directory, AI Barista, Search & Cart */}
         <div className="flex items-center gap-2">
+          {/* Admin Dashboard Button */}
+          <button
+            onClick={onOpenAdminDashboard}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-[#E65F2B] hover:from-amber-500 hover:to-[#f06e3a] text-white px-3 py-1.5 rounded-full text-xs font-extrabold shadow-md shadow-amber-900/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Open Admin Management Dashboard (/admin)"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-200" />
+            <span className="hidden sm:inline">Admin (/admin)</span>
+          </button>
+
           {/* Registered Users & Security Directory Button */}
           <button
             onClick={onOpenUsersDirectory}

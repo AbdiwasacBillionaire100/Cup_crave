@@ -13,6 +13,7 @@ import { OrderTrackerModal } from './components/OrderTrackerModal';
 import { AiBaristaModal } from './components/AiBaristaModal';
 import { AuthModal } from './components/AuthModal';
 import { UsersDirectoryModal } from './components/UsersDirectoryModal';
+import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { Footer } from './components/Footer';
 import { MENU_ITEMS as FALLBACK_MENU, CATEGORIES as FALLBACK_CATEGORIES } from './data/menuData';
 
@@ -31,6 +32,27 @@ export default function App() {
   const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem('crave_token'));
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isUsersDirectoryOpen, setIsUsersDirectoryOpen] = useState<boolean>(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState<boolean>(false);
+
+  // Check URL path or hash for /admin
+  useEffect(() => {
+    const handleRouteCheck = () => {
+      if (
+        window.location.pathname.endsWith('/admin') ||
+        window.location.hash === '#admin' ||
+        window.location.search.includes('admin=true')
+      ) {
+        setIsAdminDashboardOpen(true);
+      }
+    };
+    handleRouteCheck();
+    window.addEventListener('hashchange', handleRouteCheck);
+    window.addEventListener('popstate', handleRouteCheck);
+    return () => {
+      window.removeEventListener('hashchange', handleRouteCheck);
+      window.removeEventListener('popstate', handleRouteCheck);
+    };
+  }, []);
 
   // Cart & Modals
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -99,33 +121,38 @@ export default function App() {
   }, [cartItems]);
 
   // Fetch Categories & Menu Items from Express Backend API
+  const fetchPublicMenu = async () => {
+    try {
+      const menuRes = await fetch('/api/menu');
+      const menuData = await menuRes.json();
+      if (menuData.success && menuData.data) {
+        setMenuItems(menuData.data);
+      } else {
+        setMenuItems(FALLBACK_MENU);
+      }
+    } catch {
+      setMenuItems(FALLBACK_MENU);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch Categories
         const catRes = await fetch('/api/categories');
         const catData = await catRes.json();
         if (isMounted && catData.success && catData.data) {
           setCategories(catData.data);
         }
 
-        // Fetch Menu Items
-        const menuRes = await fetch('/api/menu');
-        const menuData = await menuRes.json();
-        if (isMounted && menuData.success && menuData.data) {
-          setMenuItems(menuData.data);
-        } else if (isMounted) {
-          setMenuItems(FALLBACK_MENU);
-        }
+        await fetchPublicMenu();
       } catch (err) {
         if (isMounted) {
           setMenuItems(FALLBACK_MENU);
         }
       } finally {
         if (isMounted) {
-          // Slight delay to showcase clean placeholder transition on load
           setTimeout(() => setIsLoading(false), 300);
         }
       }
@@ -272,6 +299,7 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenUsersDirectory={() => setIsUsersDirectoryOpen(true)}
+        onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -293,6 +321,8 @@ export default function App() {
             handleScrollToMenu();
           }}
           categoryItemCounts={categoryItemCounts}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
         {/* Main Responsive Grid Layout (Menu + Permanent Desktop Cart Sidebar) */}
@@ -382,6 +412,13 @@ export default function App() {
       <UsersDirectoryModal
         isOpen={isUsersDirectoryOpen}
         onClose={() => setIsUsersDirectoryOpen(false)}
+      />
+
+      {/* Admin Management Dashboard Modal */}
+      <AdminDashboardModal
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
+        onMenuUpdated={fetchPublicMenu}
       />
 
       {/* Floating Shopping Cart Badge */}

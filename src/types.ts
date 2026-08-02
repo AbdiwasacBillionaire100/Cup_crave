@@ -1,4 +1,5 @@
-export type CategoryId = 'all' | 'coffee' | 'coldbrew' | 'tea' | 'bakery' | 'breakfast';
+export type CategoryId = string;
+export type OrderType = 'delivery' | 'pickup' | 'table';
 
 export interface SizeOption {
   name: string;
@@ -20,6 +21,7 @@ export interface MenuItem {
   calories?: number;
   isPopular?: boolean;
   isNew?: boolean;
+  available?: boolean;
   rating: number;
   reviewCount: number;
   customizable: boolean;
@@ -27,7 +29,35 @@ export interface MenuItem {
   milkOptions?: string[];
   sweetnessLevels?: string[];
   temperatureOptions?: string[];
+  spiceLevels?: string[];
   extras?: ExtraOption[];
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  minThreshold: number;
+  lastRestocked: string;
+}
+
+export interface SalesAnalytics {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  deliveryOrdersCount: number;
+  pickupOrdersCount: number;
+  tableOrdersCount: number;
+  topSellingItems: Array<{
+    id: string;
+    name: string;
+    category: string;
+    quantitySold: number;
+    revenue: number;
+  }>;
+  recentOrders: Order[];
 }
 
 export interface CartItem {
@@ -38,6 +68,7 @@ export interface CartItem {
   selectedMilk?: string;
   selectedSweetness?: string;
   selectedTemp?: string;
+  selectedSpice?: string;
   selectedExtras: string[];
   itemTotalPrice: number;
   specialInstructions?: string;
@@ -53,12 +84,13 @@ export interface CustomerInfo {
   unit?: string;
   deliveryNotes?: string;
   pickupTime?: string;
+  tableNumber?: string;
 }
 
 export interface Order {
   id: string;
   createdAt: string;
-  orderType: 'delivery' | 'pickup';
+  orderType: OrderType;
   items: CartItem[];
   subtotal: number;
   tax: number;

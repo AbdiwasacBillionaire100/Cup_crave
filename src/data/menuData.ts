@@ -151,6 +151,7 @@ export const MENU_ITEMS: MenuItem[] = [
     temperatureOptions: ['Hot', 'Iced'],
     milkOptions: ['Whole Milk', 'Oat Milk', 'Almond Milk'],
     sweetnessLevels: ['Full Chai Sweetness', 'Half Sweetness', 'Extra Spicy (Less Sugar)'],
+    spiceLevels: ['Mild Spice', 'Medium Warm Spice (Standard)', 'Extra Cardamom & Chili Heat'],
     extras: [
       { name: 'Second Shot Espresso', price: 1.00 },
       { name: 'Cinnamon Stick Powder', price: 0.25 },
@@ -213,6 +214,7 @@ export const MENU_ITEMS: MenuItem[] = [
       { name: 'Regular Sandwich', priceOffset: 0 },
       { name: 'Double Egg & Cheese', priceOffset: 2.25 },
     ],
+    spiceLevels: ['Mild (No Hot Sauce)', 'Medium Spice (Sriracha Aioli)', 'Extra Hot (Jalapeño & Sriracha)'],
     extras: [
       { name: 'Add Crispy Bacon', price: 2.00 },
       { name: 'Add Smoked Turkey Breast', price: 2.50 },
@@ -235,6 +237,7 @@ export const MENU_ITEMS: MenuItem[] = [
       { name: 'Single Slice', priceOffset: 0 },
       { name: 'Double Slice', priceOffset: 4.50 },
     ],
+    spiceLevels: ['Mild (No Chili Flakes)', 'Medium Spice (Chili Crunch)', 'Extra Spicy (Double Chili Crunch & Jalapeño)'],
     extras: [
       { name: 'Add Organic Poached Egg', price: 1.75 },
       { name: 'Add Smoked Salmon', price: 3.50 },

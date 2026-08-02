@@ -34,6 +34,21 @@ CraveCups is a modern, high-performance, full-stack online ordering web applicat
 - **Responsive 2 to 4-Column Grid**: Smoothly scales menu cards across mobile, tablet, and ultra-wide screens.
 - **Permanent Desktop Cart Sidebar**: Shopping cart anchors to the right sidebar on desktop screens (`lg:block`), while behaving as a smooth slide-over drawer on mobile devices.
 
+### 🛠️ 6. Full-Stack Admin Management Dashboard (`/admin`)
+- **Menu Manager (Full CRUD)**:
+  - Add new dishes/drinks with pricing, images, descriptions, calories, and categories.
+  - Edit item details and prices with instant server sync (`PUT /api/admin/menu/:id`).
+  - One-click availability toggle switch (In Stock / Out of Stock) with immediate public menu updates (`PATCH /api/admin/menu/:id/toggle`).
+  - Delete items with confirmation protection (`DELETE /api/admin/menu/:id`).
+- **Inventory Tracker**:
+  - Stock table tracking raw ingredients (espresso beans, oat milk, matcha, croissant butter, honey syrup).
+  - Low-stock warning banners when quantities fall below minimum thresholds.
+  - One-click quick restock buttons (`+5 kg`, `+10 L`) and custom ingredient creation (`POST /api/admin/inventory`).
+- **Sales Analytics**:
+  - Summary metric cards showing **Total Daily Revenue** ($), **Total Orders Count** (with Delivery vs Pickup split), **Average Order Value**, and **Top Selling Dishes**.
+  - Ranked list of top-performing menu items with sales volume & revenue share.
+  - Live Recent Orders stream with customer details and order status breakdown.
+
 ---
 
 ## 🛠️ Tech Stack
