@@ -7,6 +7,7 @@ import { SearchBar } from './components/SearchBar';
 import { MenuGrid } from './components/MenuGrid';
 import { CustomizationModal } from './components/CustomizationModal';
 import { CartDrawer } from './components/CartDrawer';
+import { DesktopCartSidebar } from './components/DesktopCartSidebar';
 import { FloatingCartBadge } from './components/FloatingCartBadge';
 import { OrderTrackerModal } from './components/OrderTrackerModal';
 import { AiBaristaModal } from './components/AiBaristaModal';
@@ -240,27 +241,49 @@ export default function App() {
           categoryItemCounts={categoryItemCounts}
         />
 
-        {/* Search Bar & Tag Filters */}
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedTag={selectedTag}
-          onSelectTag={setSelectedTag}
-          resultCount={filteredMenuItems.length}
-        />
+        {/* Main Responsive Grid Layout (Menu + Permanent Desktop Cart Sidebar) */}
+        <div className="max-w-7xl xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col lg:flex-row gap-8 items-start relative">
+          {/* Main Menu Grid Area */}
+          <div className="flex-1 w-full min-w-0">
+            {/* Search Bar & Tag Filters */}
+            <SearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedTag={selectedTag}
+              onSelectTag={setSelectedTag}
+              resultCount={filteredMenuItems.length}
+            />
 
-        {/* Menu Grid / Empty Placeholder Grid */}
-        <MenuGrid
-          items={filteredMenuItems}
-          isLoading={isLoading}
-          onSelectItem={(item) => setCustomizingItem(item)}
-          onQuickAdd={handleQuickAdd}
-          onResetFilters={() => {
-            setSelectedCategory('all');
-            setSearchQuery('');
-            setSelectedTag(null);
-          }}
-        />
+            {/* Menu Grid */}
+            <MenuGrid
+              items={filteredMenuItems}
+              isLoading={isLoading}
+              onSelectItem={(item) => setCustomizingItem(item)}
+              onQuickAdd={handleQuickAdd}
+              onResetFilters={() => {
+                setSelectedCategory('all');
+                setSearchQuery('');
+                setSelectedTag(null);
+              }}
+            />
+          </div>
+
+          {/* Permanently Anchored Desktop Shopping Cart Sidebar */}
+          <aside id="desktop-cart-sidebar" className="hidden lg:block w-[380px] xl:w-[420px] shrink-0 sticky top-24 z-20 self-start animate-fade-in">
+            <DesktopCartSidebar
+              cartItems={cartItems}
+              onUpdateQuantity={handleUpdateCartQuantity}
+              onRemoveItem={handleRemoveCartItem}
+              onClearCart={handleClearCart}
+              orderType={orderType}
+              onToggleOrderType={(type) => setOrderType(type)}
+              onOrderSuccess={(newOrder) => {
+                setActiveOrder(newOrder);
+                setIsOrderTrackerOpen(true);
+              }}
+            />
+          </aside>
+        </div>
       </main>
 
       {/* Footer */}

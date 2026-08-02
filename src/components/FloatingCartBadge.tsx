@@ -25,7 +25,7 @@ export const FloatingCartBadge: React.FC<FloatingCartBadgeProps> = ({
   if (cartItemCount === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 animate-fade-in">
+    <div className="fixed bottom-6 right-6 z-40 animate-fade-in lg:hidden">
       <button
         onClick={onOpenCart}
         className={`group flex items-center gap-3 bg-gradient-to-r from-[#E65F2B] to-[#D14F1D] hover:from-[#f06e3a] hover:to-[#e15926] text-white px-4 py-3 rounded-2xl shadow-2xl shadow-[#E65F2B]/50 border border-[#D4A373]/40 transition-all duration-300 transform hover:scale-105 active:scale-95 ${
