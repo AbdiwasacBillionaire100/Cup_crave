@@ -704,6 +704,14 @@ app.post('/api/orders', (req: Request, res: Response) => {
   }
 });
 
+// Get All Orders (for KDS Kitchen Display System & Admin)
+app.get('/api/orders', (_req: Request, res: Response) => {
+  const allOrders = Array.from(ordersStore.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  res.json({ success: true, data: allOrders });
+});
+
 // Get Order Details / Real-time Status
 app.get('/api/orders/:id', (req: Request, res: Response) => {
   const order = ordersStore.get(req.params.id);

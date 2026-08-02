@@ -14,12 +14,13 @@ import { AiBaristaModal } from './components/AiBaristaModal';
 import { AuthModal } from './components/AuthModal';
 import { UsersDirectoryModal } from './components/UsersDirectoryModal';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
+import { KdsModal } from './components/KdsModal';
 import { Footer } from './components/Footer';
 import { MENU_ITEMS as FALLBACK_MENU, CATEGORIES as FALLBACK_CATEGORIES } from './data/menuData';
 
 export default function App() {
   // App States
-  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
+  const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [categories, setCategories] = useState<Category[]>(FALLBACK_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -33,14 +34,25 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isUsersDirectoryOpen, setIsUsersDirectoryOpen] = useState<boolean>(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState<boolean>(false);
+  const [isKdsOpen, setIsKdsOpen] = useState<boolean>(false);
 
-  // Check URL path or hash for /admin
+  // Check URL path or hash for /admin or /staff/kds
   useEffect(() => {
     const handleRouteCheck = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      const search = window.location.search;
       if (
-        window.location.pathname.endsWith('/admin') ||
-        window.location.hash === '#admin' ||
-        window.location.search.includes('admin=true')
+        path.includes('/staff/kds') ||
+        path.includes('/kds') ||
+        hash === '#kds' ||
+        search.includes('kds=true')
+      ) {
+        setIsKdsOpen(true);
+      } else if (
+        path.endsWith('/admin') ||
+        hash === '#admin' ||
+        search.includes('admin=true')
       ) {
         setIsAdminDashboardOpen(true);
       }
@@ -300,6 +312,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenUsersDirectory={() => setIsUsersDirectoryOpen(true)}
         onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
+        onOpenKds={() => setIsKdsOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -419,6 +432,12 @@ export default function App() {
         isOpen={isAdminDashboardOpen}
         onClose={() => setIsAdminDashboardOpen(false)}
         onMenuUpdated={fetchPublicMenu}
+      />
+
+      {/* Staff Kitchen Display System Modal (/staff/kds) */}
+      <KdsModal
+        isOpen={isKdsOpen}
+        onClose={() => setIsKdsOpen(false)}
       />
 
       {/* Floating Shopping Cart Badge */}

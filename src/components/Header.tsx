@@ -1,13 +1,13 @@
 import React from 'react';
-import { Coffee, ShoppingBag, Sparkles, MapPin, Clock, Search, User as UserIcon, LogIn, Users, LogOut, ShieldCheck } from 'lucide-react';
-import { Order, User } from '../types';
+import { Coffee, ShoppingBag, Sparkles, MapPin, Clock, Search, User as UserIcon, LogIn, Users, LogOut, ShieldCheck, ChefHat } from 'lucide-react';
+import { Order, User, OrderType } from '../types';
 
 interface HeaderProps {
   cartItemCount: number;
   onOpenCart: () => void;
   onOpenAiBarista: () => void;
-  orderType: 'delivery' | 'pickup';
-  onToggleOrderType: (type: 'delivery' | 'pickup') => void;
+  orderType: OrderType;
+  onToggleOrderType: (type: OrderType) => void;
   activeOrder: Order | null;
   onOpenOrderTracker: () => void;
   onScrollToMenu: () => void;
@@ -16,6 +16,7 @@ interface HeaderProps {
   onOpenAuth: () => void;
   onOpenUsersDirectory: () => void;
   onOpenAdminDashboard: () => void;
+  onOpenKds: () => void;
   onLogout: () => void;
 }
 
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onOpenUsersDirectory,
   onOpenAdminDashboard,
+  onOpenKds,
   onLogout,
 }) => {
   return (
@@ -81,8 +83,18 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Action Buttons: Admin Dashboard, Auth Profile, Users Directory, AI Barista, Search & Cart */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons: KDS Staff, Admin Dashboard, Auth Profile, Users Directory, AI Barista, Search & Cart */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Staff KDS Button */}
+          <button
+            onClick={onOpenKds}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-black px-3 py-1.5 rounded-full text-xs font-black shadow-md shadow-amber-900/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Open Kitchen Display System for Staff (/staff/kds)"
+          >
+            <ChefHat className="w-3.5 h-3.5 text-black" />
+            <span className="hidden xs:inline">Kitchen KDS</span>
+          </button>
+
           {/* Admin Dashboard Button */}
           <button
             onClick={onOpenAdminDashboard}
