@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CartItem, CustomerInfo, Order } from '../types';
+import React, { useState, useEffect } from 'react';
+import { CartItem, CustomerInfo, Order, User } from '../types';
 import {
   ShoppingBag,
   Trash2,
@@ -22,6 +22,7 @@ interface DesktopCartSidebarProps {
   orderType: 'delivery' | 'pickup';
   onToggleOrderType: (type: 'delivery' | 'pickup') => void;
   onOrderSuccess: (order: Order) => void;
+  currentUser?: User | null;
 }
 
 export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
@@ -32,14 +33,23 @@ export const DesktopCartSidebar: React.FC<DesktopCartSidebarProps> = ({
   orderType,
   onToggleOrderType,
   onOrderSuccess,
+  currentUser,
 }) => {
   // Checkout Form States
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerName, setCustomerName] = useState(currentUser?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '');
   const [customerAddress, setCustomerAddress] = useState('');
   const [aptUnit, setAptUnit] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [pickupTime, setPickupTime] = useState('ASAP (~10-15 mins)');
+
+  // Auto-fill when user signs in
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.name) setCustomerName(currentUser.name);
+      if (currentUser.phone) setCustomerPhone(currentUser.phone);
+    }
+  }, [currentUser]);
 
   // Promo Code State
   const [promoCodeInput, setPromoCodeInput] = useState('');

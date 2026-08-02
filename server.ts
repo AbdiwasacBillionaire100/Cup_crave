@@ -1,8 +1,9 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
+import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import { MENU_ITEMS, CATEGORIES } from './src/data/menuData';
-import { Order, OrderStatus } from './src/types';
+import { Order, OrderStatus, User, UserActivityLog } from './src/types';
 import { GoogleGenAI } from '@google/genai';
 
 const app = express();
@@ -10,8 +11,274 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// In-memory order database
+// In-memory databases
 const ordersStore = new Map<string, Order>();
+
+// User Authentication Database & Security
+interface UserRecord extends User {
+  passwordHash: string;
+  salt: string;
+}
+
+const usersStore = new Map<string, UserRecord>();
+const tokensStore = new Map<string, string>(); // token -> email
+const activityLogsStore: UserActivityLog[] = [];
+
+// Password Hashing Security Helpers
+function hashPassword(password: string, salt: string): string {
+  return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+}
+
+function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function sanitizeUser(user: UserRecord): User {
+  const { passwordHash, salt, ...sanitized } = user;
+  return sanitized;
+}
+
+// Seed Initial Demo Users
+(function seedUsers() {
+  const adminSalt = crypto.randomBytes(16).toString('hex');
+  const adminUser: UserRecord = {
+    id: 'user-admin-01',
+    name: 'Crave Cups Admin',
+    email: 'admin@cravecups.com',
+    phone: '(555) 987-6543',
+    favoriteDrink: 'Single Origin Espresso Shot',
+    role: 'admin',
+    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    loginCount: 12,
+    salt: adminSalt,
+    passwordHash: hashPassword('admin123', adminSalt),
+  };
+  usersStore.set(adminUser.email.toLowerCase(), adminUser);
+  activityLogsStore.push({
+    id: 'log-seed-1',
+    userId: adminUser.id,
+    userName: adminUser.name,
+    userEmail: adminUser.email,
+    action: 'registered',
+    timestamp: adminUser.createdAt,
+  });
+
+  const demoSalt = crypto.randomBytes(16).toString('hex');
+  const demoUser: UserRecord = {
+    id: 'user-customer-01',
+    name: 'Sarah Connor',
+    email: 'sarah.crave@example.com',
+    phone: '(555) 234-5678',
+    favoriteDrink: 'Crave Signature Honey Latte',
+    role: 'customer',
+    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+    lastLoginAt: new Date(Date.now() - 1 * 3600000).toISOString(),
+    loginCount: 4,
+    salt: demoSalt,
+    passwordHash: hashPassword('coffee123', demoSalt),
+  };
+  usersStore.set(demoUser.email.toLowerCase(), demoUser);
+  activityLogsStore.push({
+    id: 'log-seed-2',
+    userId: demoUser.id,
+    userName: demoUser.name,
+    userEmail: demoUser.email,
+    action: 'registered',
+    timestamp: demoUser.createdAt,
+  });
+  activityLogsStore.push({
+    id: 'log-seed-3',
+    userId: demoUser.id,
+    userName: demoUser.name,
+    userEmail: demoUser.email,
+    action: 'logged_in',
+    timestamp: demoUser.lastLoginAt,
+  });
+})();
+
+// AUTHENTICATION API ROUTES
+
+// User Registration Endpoint
+app.post('/api/auth/register', (req: Request, res: Response) => {
+  try {
+    const { name, email, password, phone, favoriteDrink } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ success: false, error: 'Full name must be at least 2 characters long' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email.trim())) {
+      return res.status(400).json({ success: false, error: 'Please enter a valid email address' });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (usersStore.has(normalizedEmail)) {
+      return res.status(400).json({ success: false, error: 'An account with this email already exists' });
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = hashPassword(password, salt);
+    const userId = 'usr-' + Math.floor(100000 + Math.random() * 900000);
+    const now = new Date().toISOString();
+
+    const newUser: UserRecord = {
+      id: userId,
+      name: name.trim(),
+      email: normalizedEmail,
+      phone: phone ? phone.trim() : undefined,
+      favoriteDrink: favoriteDrink ? favoriteDrink.trim() : undefined,
+      role: normalizedEmail.includes('admin') ? 'admin' : 'customer',
+      createdAt: now,
+      lastLoginAt: now,
+      loginCount: 1,
+      salt,
+      passwordHash,
+    };
+
+    usersStore.set(normalizedEmail, newUser);
+
+    const token = generateToken();
+    tokensStore.set(token, normalizedEmail);
+
+    // Record activity log
+    activityLogsStore.unshift({
+      id: 'log-' + Math.random().toString(36).substr(2, 9),
+      userId: newUser.id,
+      userName: newUser.name,
+      userEmail: newUser.email,
+      action: 'registered',
+      timestamp: now,
+    });
+    activityLogsStore.unshift({
+      id: 'log-' + Math.random().toString(36).substr(2, 9),
+      userId: newUser.id,
+      userName: newUser.name,
+      userEmail: newUser.email,
+      action: 'logged_in',
+      timestamp: now,
+    });
+
+    res.json({
+      success: true,
+      user: sanitizeUser(newUser),
+      token,
+      message: 'Registration successful! Welcome to CraveCups.',
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Registration failed' });
+  }
+});
+
+// User Login Endpoint
+app.post('/api/auth/login', (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = usersStore.get(normalizedEmail);
+
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    const inputHash = hashPassword(password, user.salt);
+    if (inputHash !== user.passwordHash) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    const now = new Date().toISOString();
+    user.lastLoginAt = now;
+    user.loginCount += 1;
+    usersStore.set(normalizedEmail, user);
+
+    const token = generateToken();
+    tokensStore.set(token, normalizedEmail);
+
+    activityLogsStore.unshift({
+      id: 'log-' + Math.random().toString(36).substr(2, 9),
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      action: 'logged_in',
+      timestamp: now,
+    });
+
+    res.json({
+      success: true,
+      user: sanitizeUser(user),
+      token,
+      message: `Welcome back, ${user.name}!`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Login failed' });
+  }
+});
+
+// Get Current User Profile (Validate Session Token)
+app.get('/api/auth/me', (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: 'Unauthorized session' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const email = tokensStore.get(token);
+  if (!email) {
+    return res.status(401).json({ success: false, error: 'Invalid or expired session token' });
+  }
+
+  const user = usersStore.get(email);
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+
+  res.json({ success: true, user: sanitizeUser(user) });
+});
+
+// Logout Endpoint
+app.post('/api/auth/logout', (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const email = tokensStore.get(token);
+    if (email) {
+      const user = usersStore.get(email);
+      if (user) {
+        activityLogsStore.unshift({
+          id: 'log-' + Math.random().toString(36).substr(2, 9),
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          action: 'logged_out',
+          timestamp: new Date().toISOString(),
+        });
+      }
+      tokensStore.delete(token);
+    }
+  }
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Admin API: View All Registered Users & Live Login Activity Logs
+app.get('/api/admin/users', (_req: Request, res: Response) => {
+  const registeredUsers = Array.from(usersStore.values()).map(sanitizeUser);
+  res.json({
+    success: true,
+    totalUsers: registeredUsers.length,
+    users: registeredUsers,
+    activityLogs: activityLogsStore,
+  });
+});
 
 // Generate driver names & baristas
 const BARISTAS = ['Marco (Master Barista)', 'Elena (Latte Specialist)', 'Devon (Cold Brew Artisan)'];

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Coffee, ShoppingBag, Sparkles, MapPin, Clock, Search } from 'lucide-react';
-import { Order } from '../types';
+import { Coffee, ShoppingBag, Sparkles, MapPin, Clock, Search, User as UserIcon, LogIn, Users, LogOut, ShieldCheck } from 'lucide-react';
+import { Order, User } from '../types';
 
 interface HeaderProps {
   cartItemCount: number;
@@ -12,6 +12,10 @@ interface HeaderProps {
   onOpenOrderTracker: () => void;
   onScrollToMenu: () => void;
   onSearchClick: () => void;
+  currentUser: User | null;
+  onOpenAuth: () => void;
+  onOpenUsersDirectory: () => void;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,6 +28,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenOrderTracker,
   onScrollToMenu,
   onSearchClick,
+  currentUser,
+  onOpenAuth,
+  onOpenUsersDirectory,
+  onLogout,
 }) => {
   return (
     <header id="header" className="sticky top-0 z-40 w-full bg-[#1F1A17]/95 backdrop-blur-md border-b border-[#3A312B] px-4 py-3 transition-all">
@@ -71,8 +79,51 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Action Buttons: AI Barista, Search, Active Tracker & Cart */}
+        {/* Action Buttons: Auth Profile, Users Directory, AI Barista, Search & Cart */}
         <div className="flex items-center gap-2">
+          {/* Registered Users & Security Directory Button */}
+          <button
+            onClick={onOpenUsersDirectory}
+            className="flex items-center gap-1.5 bg-[#2D2521] border border-[#3A312B] hover:border-[#D4A373] text-stone-300 hover:text-white px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm"
+            title="View Registered Users & Login Activity Logs"
+          >
+            <Users className="w-3.5 h-3.5 text-[#D4A373]" />
+            <span className="hidden lg:inline">Users & Logs</span>
+          </button>
+
+          {/* User Auth Profile / Login Button */}
+          {currentUser ? (
+            <div className="flex items-center gap-1.5 bg-[#2D2521] border border-[#3A312B] p-1 pr-2.5 rounded-full shadow-sm">
+              <div className="w-6 h-6 rounded-full bg-[#E65F2B] text-white flex items-center justify-center font-bold text-xs uppercase font-mono">
+                {currentUser.name.charAt(0)}
+              </div>
+              <div className="hidden xs:flex flex-col text-left">
+                <span className="text-xs font-bold text-white leading-none truncate max-w-[90px]">
+                  {currentUser.name.split(' ')[0]}
+                </span>
+                <span className="text-[9px] text-emerald-400 font-mono leading-none flex items-center gap-0.5 mt-0.5">
+                  <ShieldCheck className="w-2.5 h-2.5" />
+                  {currentUser.role}
+                </span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="p-1 text-stone-400 hover:text-rose-400 transition-colors ml-1"
+                title="Log Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-[#E65F2B] to-[#D14F1D] text-white px-3 py-1.5 rounded-full text-xs font-extrabold shadow-md shadow-[#E65F2B]/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
+
           {/* Active Order Pill if available */}
           {activeOrder && (
             <button
@@ -88,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* AI Barista Button */}
           <button
             onClick={onOpenAiBarista}
-            className="flex items-center gap-1.5 bg-[#2D2521] border border-[#D4A373]/40 text-[#D4A373] hover:border-[#D4A373] hover:bg-[#3A312B] px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+            className="flex items-center gap-1.5 bg-[#2D2521] border border-[#D4A373]/40 text-[#D4A373] hover:border-[#D4A373] hover:bg-[#3A312B] px-2.5 py-1.5 rounded-full text-xs font-medium transition-all"
             title="Ask AI Barista for a recommendation"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#E65F2B]" />
@@ -150,3 +201,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

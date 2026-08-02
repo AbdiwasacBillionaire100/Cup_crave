@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MenuItem, CartItem, CategoryId, Category, Order } from './types';
+import { MenuItem, CartItem, CategoryId, Category, Order, User } from './types';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { CategoryFilter } from './components/CategoryFilter';
@@ -11,6 +11,8 @@ import { DesktopCartSidebar } from './components/DesktopCartSidebar';
 import { FloatingCartBadge } from './components/FloatingCartBadge';
 import { OrderTrackerModal } from './components/OrderTrackerModal';
 import { AiBaristaModal } from './components/AiBaristaModal';
+import { AuthModal } from './components/AuthModal';
+import { UsersDirectoryModal } from './components/UsersDirectoryModal';
 import { Footer } from './components/Footer';
 import { MENU_ITEMS as FALLBACK_MENU, CATEGORIES as FALLBACK_CATEGORIES } from './data/menuData';
 
@@ -23,6 +25,12 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // Authentication & Users State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem('crave_token'));
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isUsersDirectoryOpen, setIsUsersDirectoryOpen] = useState<boolean>(false);
 
   // Cart & Modals
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -39,6 +47,47 @@ export default function App() {
   const [isAiBaristaOpen, setIsAiBaristaOpen] = useState<boolean>(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState<boolean>(false);
+
+  // Validate existing auth session token on mount
+  useEffect(() => {
+    if (authToken) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.user) {
+            setCurrentUser(data.user);
+          } else {
+            // Expired or invalid token
+            localStorage.removeItem('crave_token');
+            setAuthToken(null);
+            setCurrentUser(null);
+          }
+        })
+        .catch(() => {
+          // Network error or server restart
+        });
+    }
+  }, [authToken]);
+
+  const handleAuthSuccess = (user: User, token: string) => {
+    setCurrentUser(user);
+    setAuthToken(token);
+    localStorage.setItem('crave_token', token);
+  };
+
+  const handleLogout = () => {
+    if (authToken) {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+      }).catch(() => {});
+    }
+    localStorage.removeItem('crave_token');
+    setAuthToken(null);
+    setCurrentUser(null);
+  };
 
   // Save Cart to LocalStorage
   useEffect(() => {
@@ -220,7 +269,12 @@ export default function App() {
         onOpenOrderTracker={() => setIsOrderTrackerOpen(true)}
         onScrollToMenu={handleScrollToMenu}
         onSearchClick={handleScrollToMenu}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenUsersDirectory={() => setIsUsersDirectoryOpen(true)}
+        onLogout={handleLogout}
       />
+
 
       {/* Main Content Area */}
       <main className="flex-1">
@@ -277,6 +331,7 @@ export default function App() {
               onClearCart={handleClearCart}
               orderType={orderType}
               onToggleOrderType={(type) => setOrderType(type)}
+              currentUser={currentUser}
               onOrderSuccess={(newOrder) => {
                 setActiveOrder(newOrder);
                 setIsOrderTrackerOpen(true);
@@ -316,6 +371,19 @@ export default function App() {
         onClose={() => setIsOrderTrackerOpen(false)}
       />
 
+      {/* Authentication Modal (Login / Register) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Registered Users Directory & Login Activity Audit Modal */}
+      <UsersDirectoryModal
+        isOpen={isUsersDirectoryOpen}
+        onClose={() => setIsUsersDirectoryOpen(false)}
+      />
+
       {/* Floating Shopping Cart Badge */}
       <FloatingCartBadge
         cartItemCount={cartItems.reduce((sum, ci) => sum + ci.quantity, 0)}
@@ -329,5 +397,6 @@ export default function App() {
         onSelectRecommendedItem={(item) => setCustomizingItem(item)}
       />
     </div>
+
   );
 }

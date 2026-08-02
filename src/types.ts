@@ -85,3 +85,24 @@ export interface Category {
   iconName: string;
   description: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  favoriteDrink?: string;
+  role: 'customer' | 'admin';
+  createdAt: string;
+  lastLoginAt: string;
+  loginCount: number;
+}
+
+export interface UserActivityLog {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  action: 'registered' | 'logged_in' | 'logged_out';
+  timestamp: string;
+}
