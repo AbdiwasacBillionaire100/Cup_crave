@@ -66,7 +66,11 @@ app.post('/api/orders', (req: Request, res: Response) => {
     }
 
     if (!customerInfo || !customerInfo.name || !customerInfo.phone) {
-      return res.status(400).json({ success: false, error: 'Customer name and phone are required' });
+      return res.status(400).json({ success: false, error: 'Customer name and phone number are required' });
+    }
+
+    if (orderType === 'delivery' && !customerInfo.address) {
+      return res.status(400).json({ success: false, error: 'Delivery address is required for delivery orders' });
     }
 
     const orderId = 'CC-' + Math.floor(100000 + Math.random() * 900000);
@@ -76,7 +80,7 @@ app.post('/api/orders', (req: Request, res: Response) => {
     const newOrder: Order = {
       id: orderId,
       createdAt: new Date().toISOString(),
-      orderType: orderType || 'delivery',
+      orderType: orderType === 'pickup' ? 'pickup' : 'delivery',
       items,
       subtotal: Number(subtotal) || 0,
       tax: Number(tax) || 0,

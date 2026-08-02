@@ -31,7 +31,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [aptUnit, setAptUnit] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [pickupTime, setPickupTime] = useState('ASAP (~10-15 mins)');
 
   // Promo Code State
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -91,11 +93,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
     setIsSubmitting(true);
 
+    const fullAddress = orderType === 'delivery' 
+      ? `${customerAddress.trim()}${aptUnit.trim() ? `, Apt/Unit ${aptUnit.trim()}` : ''}`
+      : undefined;
+
     const customerInfo: CustomerInfo = {
       name: customerName.trim(),
       phone: customerPhone.trim(),
-      address: orderType === 'delivery' ? customerAddress.trim() : undefined,
+      address: fullAddress,
       deliveryNotes: deliveryNotes.trim() || undefined,
+      pickupTime: orderType === 'pickup' ? pickupTime : undefined,
     };
 
     try {
@@ -159,29 +166,31 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Order Mode Toggle */}
-          <div className="bg-[#2D2521] p-1.5 rounded-2xl border border-[#3A312B] flex gap-1">
+          {/* Order Mode Toggle Switch */}
+          <div className="bg-[#15110F] p-1.5 rounded-2xl border border-[#3A312B] flex gap-1.5 shadow-inner">
             <button
+              type="button"
               onClick={() => onToggleOrderType('delivery')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
                 orderType === 'delivery'
-                  ? 'bg-[#E65F2B] text-white shadow'
-                  : 'text-stone-400 hover:text-white'
+                  ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
+                  : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
               }`}
             >
               <MapPin className="w-4 h-4" />
-              <span>Delivery (~25m)</span>
+              <span>Delivery</span>
             </button>
             <button
+              type="button"
               onClick={() => onToggleOrderType('pickup')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all ${
                 orderType === 'pickup'
-                  ? 'bg-[#E65F2B] text-white shadow'
-                  : 'text-stone-400 hover:text-white'
+                  ? 'bg-[#E65F2B] text-white shadow-lg shadow-[#E65F2B]/30 border border-[#E65F2B]'
+                  : 'bg-[#2D2521] text-stone-400 hover:text-white border border-[#3A312B]'
               }`}
             >
               <Clock className="w-4 h-4" />
-              <span>Pickup (~12m)</span>
+              <span>Self Pickup</span>
             </button>
           </div>
 
@@ -286,59 +295,111 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {/* Delivery & Customer Info Form */}
           {cartItems.length > 0 && (
             <div className="space-y-4 pt-2 border-t border-[#3A312B]">
-              <span className="text-xs font-bold text-[#D4A373] uppercase tracking-wider block">
-                {orderType === 'delivery' ? 'Delivery Address & Contact' : 'Pickup Customer Info'}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#D4A373] uppercase tracking-wider block">
+                  {orderType === 'delivery' ? 'Delivery Details & Address' : 'Self Pickup Details'}
+                </span>
+                <span className="text-[11px] text-stone-400">
+                  {orderType === 'delivery' ? 'Est. ~25 mins delivery' : 'Ready at 742 Market St'}
+                </span>
+              </div>
 
-              <div className="space-y-2 text-xs">
-                <div>
-                  <label className="text-stone-300 block mb-1">Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. Sarah Connor"
-                    className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-stone-300 block mb-1">Phone Number *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="e.g. (555) 234-5678"
-                    className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none"
-                  />
-                </div>
-
-                {orderType === 'delivery' && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-stone-300 block mb-1">Delivery Address *</label>
+                    <label className="text-stone-300 block mb-1 font-semibold">Full Name *</label>
                     <input
                       type="text"
                       required
-                      value={customerAddress}
-                      onChange={(e) => setCustomerAddress(e.target.value)}
-                      placeholder="e.g. 742 Evergreen Terrace, Apt 4B"
-                      className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="e.g. Sarah Connor"
+                      className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
                     />
                   </div>
-                )}
 
-                <div>
-                  <label className="text-stone-300 block mb-1">Gate code or Barista Notes</label>
-                  <input
-                    type="text"
-                    value={deliveryNotes}
-                    onChange={(e) => setDeliveryNotes(e.target.value)}
-                    placeholder="e.g. Leave at front porch, extra napkins"
-                    className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none"
-                  />
+                  <div>
+                    <label className="text-stone-300 block mb-1 font-semibold">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="e.g. (555) 234-5678"
+                      className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
+                    />
+                  </div>
                 </div>
+
+                {orderType === 'delivery' ? (
+                  <>
+                    <div>
+                      <label className="text-stone-300 block mb-1 font-semibold">Street Address *</label>
+                      <input
+                        type="text"
+                        required
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        placeholder="e.g. 742 Evergreen Terrace"
+                        className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-stone-300 block mb-1">Apt / Unit # (Optional)</label>
+                        <input
+                          type="text"
+                          value={aptUnit}
+                          onChange={(e) => setAptUnit(e.target.value)}
+                          placeholder="e.g. Apt 4B"
+                          className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-stone-300 block mb-1">Gate Code / Notes</label>
+                        <input
+                          type="text"
+                          value={deliveryNotes}
+                          onChange={(e) => setDeliveryNotes(e.target.value)}
+                          placeholder="e.g. #4021 / Ring bell"
+                          className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[#D4A373] block mb-1 font-bold flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        Estimated Collection Time *
+                      </label>
+                      <select
+                        value={pickupTime}
+                        onChange={(e) => setPickupTime(e.target.value)}
+                        className="w-full bg-[#2D2521] border border-[#D4A373]/50 focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none font-medium cursor-pointer"
+                      >
+                        <option value="ASAP (~10-15 mins)">⚡ ASAP (~10-15 mins)</option>
+                        <option value="In 20 minutes">🕒 In 20 minutes</option>
+                        <option value="In 30 minutes">🕒 In 30 minutes</option>
+                        <option value="In 45 minutes">🕒 In 45 minutes</option>
+                        <option value="In 1 hour">🕒 In 1 hour</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-stone-300 block mb-1">Barista Pickup Notes (Optional)</label>
+                      <input
+                        type="text"
+                        value={deliveryNotes}
+                        onChange={(e) => setDeliveryNotes(e.target.value)}
+                        placeholder="e.g. Extra hot, double cupped, holding for pickup"
+                        className="w-full bg-[#2D2521] border border-[#3A312B] focus:border-[#E65F2B] text-white p-2.5 rounded-xl outline-none transition-colors"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Promo Code Box */}
@@ -449,7 +510,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               disabled={isSubmitting}
               className="w-full flex items-center justify-between bg-[#E65F2B] hover:bg-[#D14F1D] disabled:bg-stone-700 text-white font-bold text-sm px-6 py-4 rounded-2xl shadow-xl shadow-[#E65F2B]/30 transition-all transform active:scale-95"
             >
-              <span>{isSubmitting ? 'Placing Crave Order...' : 'Place Order Now'}</span>
+              <span>{isSubmitting ? 'Placing Order...' : 'Place Order'}</span>
               <div className="flex items-center gap-1">
                 <span className="font-mono text-base">${grandTotal.toFixed(2)}</span>
                 <ArrowRight className="w-4 h-4" />

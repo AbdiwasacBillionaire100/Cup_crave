@@ -52,6 +52,7 @@ export interface CustomerInfo {
   address?: string;
   unit?: string;
   deliveryNotes?: string;
+  pickupTime?: string;
 }
 
 export interface Order {
