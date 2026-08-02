@@ -2,8 +2,8 @@ import { MenuItem, Category } from '../types';
 
 export const CATEGORIES: Category[] = [
   { id: 'all', name: 'All Items', iconName: 'Coffee', description: 'Explore our full artisan menu' },
-  { id: 'coffee', name: 'Espresso & Hot', iconName: 'Flame', description: 'Freshly roasted espresso & milk handcrafted brews' },
-  { id: 'coldbrew', name: 'Cold Brews & Iced', iconName: 'CupSoda', description: 'Slow-steeped nitro brews & refreshing iced coffee' },
+  { id: 'coffee', name: 'Hot Brews', iconName: 'Flame', description: 'Freshly roasted espresso & milk handcrafted hot brews' },
+  { id: 'coldbrew', name: 'Iced Drinks', iconName: 'CupSoda', description: 'Slow-steeped nitro brews & refreshing iced coffee' },
   { id: 'tea', name: 'Specialty Teas', iconName: 'Sparkles', description: 'Ceremonial grade matcha, chai & herbal infusions' },
   { id: 'bakery', name: 'Bakery & Pastries', iconName: 'Croissant', description: 'Flaky French croissants & freshly baked treats' },
   { id: 'breakfast', name: 'Breakfast & Bites', iconName: 'UtensilsCrossed', description: 'Warm brioche sandwiches & avocado sourdough toasts' },
