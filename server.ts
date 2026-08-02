@@ -143,6 +143,34 @@ app.get('/api/orders/:id', (req: Request, res: Response) => {
   res.json({ success: true, data: order });
 });
 
+// Update Order Status (Admin / Barista Simulator POST route)
+app.post('/api/orders/:id/status', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  const order = ordersStore.get(id);
+  if (!order) {
+    return res.status(404).json({ success: false, error: 'Order not found' });
+  }
+
+  const validStatuses: OrderStatus[] = ['received', 'crafting', 'out_for_delivery', 'ready_for_pickup', 'delivered'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, error: 'Invalid order status' });
+  }
+
+  order.status = status;
+  if (status === 'delivered') {
+    order.estimatedTimeMinutes = 0;
+  } else if (status === 'out_for_delivery' || status === 'ready_for_pickup') {
+    order.estimatedTimeMinutes = 5;
+  } else if (status === 'crafting') {
+    order.estimatedTimeMinutes = 10;
+  }
+
+  ordersStore.set(id, order);
+  res.json({ success: true, data: order });
+});
+
 // AI Barista Recommendation Proxy API
 app.post('/api/ai-barista', async (req: Request, res: Response) => {
   const { mood, preference, timeOfDay, dietary } = req.body;
